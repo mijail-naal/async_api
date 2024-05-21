@@ -4,9 +4,9 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
+class TestSettings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file='../env/prod/.env',
+        env_file='../.env',
         env_file_encoding='utf-8'
     )
     project_name: str = ...
@@ -17,6 +17,6 @@ class Settings(BaseSettings):
     elastic_port: int = Field(9200, alias='ELASTIC_PORT')
 
 
-settings = Settings()
+test_settings = TestSettings()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

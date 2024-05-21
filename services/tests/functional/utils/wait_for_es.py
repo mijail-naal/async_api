@@ -1,5 +1,6 @@
 import time
 import backoff
+import sys
 
 from elasticsearch import (
     Elasticsearch,
@@ -8,11 +9,14 @@ from elasticsearch import (
     RequestError
 )
 
-from ..settings import settings
 from helpers import logger
 
+sys.path.append("..")
+from settings import test_settings
+
+
 timeout = time.time() + 60 * 5
-hosts = [f'{settings.elastic_protocol}://{settings.elastic_host}:{settings.elastic_port}']
+hosts = [f'{test_settings.elastic_protocol}://{test_settings.elastic_host}:{test_settings.elastic_port}']
 
 
 @backoff.on_exception(
@@ -28,5 +32,5 @@ def connect_to_es(es: Elasticsearch) -> None:
 
 
 if __name__ == '__main__':
-    es_client = Elasticsearch(hosts=hosts, validate_cert=False, use_ssl=False)
+    es_client = Elasticsearch(hosts=hosts, verify_certs=False)
     connect_to_es(es_client)

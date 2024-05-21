@@ -1,10 +1,13 @@
 import time
 import backoff
+import sys
 
 from redis import Redis
 
-from utils.helpers import logger
-from ..settings import settings
+from helpers import logger
+
+sys.path.append("..")
+from settings import test_settings
 
 timeout = time.time() + 60 * 5
 
@@ -21,8 +24,8 @@ def connect(redis: Redis) -> None:
 
 if __name__ == "__main__":
     redis = Redis(
-        host=settings.redis_host,
-        port=settings.redis_port
+        host=test_settings.redis_host,
+        port=test_settings.redis_port,
         decode_responses=True
     )
     connect(redis)

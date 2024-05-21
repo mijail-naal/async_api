@@ -1,16 +1,12 @@
-import os
 import time
 import backoff
 
 from redis import Redis
+
 from utils.helpers import logger
+from ..settings import settings
 
 timeout = time.time() + 60 * 5
-
-REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-
-redis = Redis(host=REDIS_HOST, port=REDIS_PORT)
 
 
 @backoff.on_exception(
@@ -24,5 +20,9 @@ def connect(redis: Redis) -> None:
 
 
 if __name__ == "__main__":
-    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    redis = Redis(
+        host=settings.redis_host,
+        port=settings.redis_port
+        decode_responses=True
+    )
     connect(redis)

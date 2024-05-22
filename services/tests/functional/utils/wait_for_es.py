@@ -1,8 +1,12 @@
+import sys
 import backoff
 
 from elasticsearch import Elasticsearch
-from tests.functional.settings import test_settings
 from logger import logger
+
+sys.path.append("..")
+
+from settings import test_settings
 
 
 def backoff_handler(details: dict) -> None:
@@ -18,18 +22,20 @@ def backoff_handler(details: dict) -> None:
                       ConnectionError,
                       on_backoff=backoff_handler)
 def es_connection(client: Elasticsearch):
-    if not es_client.ping():
+    if not client.ping():
         logger.info("Trying to connect ...")
         raise ConnectionError("Failed to connect")
+    
     logger.info("connected.")
-
 
 
 if __name__ == '__main__':
     es_client = Elasticsearch(
-        hosts=test_settings.es_host,  
+        hosts=test_settings.es_host, 
         verify_certs=False,
         max_retries=0,
+        # retry_on_status=0,
+        # retry_on_timeout=False,
     )
-
+    
     es_connection(es_client)

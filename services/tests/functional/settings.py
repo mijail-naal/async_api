@@ -15,6 +15,7 @@ class TestSettings(BaseSettings):
     elastic_protocol: str = ...
     elastic_host: str = Field('127.0.0.1', alias='ELASTIC_HOST')
     elastic_port: int = Field(9200, alias='ELASTIC_PORT')
+    service_url: str = ...
 
 
 test_settings = TestSettings()

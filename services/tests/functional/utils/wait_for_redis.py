@@ -1,13 +1,10 @@
 import time
 import backoff
-import sys
 
 from redis import Redis
 
 from helpers import logger
-
-sys.path.append("..")
-from settings import test_settings
+from tests.functional.settings import test_settings
 
 timeout = time.time() + 60 * 5
 

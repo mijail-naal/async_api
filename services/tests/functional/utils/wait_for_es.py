@@ -1,6 +1,5 @@
 import time
 import backoff
-import sys
 
 from elasticsearch import (
     Elasticsearch,
@@ -10,9 +9,7 @@ from elasticsearch import (
 )
 
 from helpers import logger
-
-sys.path.append("..")
-from settings import test_settings
+from tests.functional.settings import test_settings
 
 
 timeout = time.time() + 60 * 5

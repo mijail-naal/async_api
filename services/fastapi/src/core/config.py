@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     project_name: str = ...
     redis_host: str = Field(9200, alias='REDIS_HOST')
     redis_port: int = Field(6379, alias='REDIS_PORT')
-    elastic_protocol: str = ...
+    elastic_protocol: str = Field('http', alias='ELASTIC_PROTOCOL')
     elastic_host: str = Field('127.0.0.1', alias='ELASTIC_HOST')
     elastic_port: int = Field(9200, alias='ELASTIC_PORT')
 

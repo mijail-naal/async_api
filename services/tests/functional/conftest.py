@@ -3,15 +3,16 @@ import pytest_asyncio
 
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
+from redis.asyncio import Redis
 
 from tests.functional.settings import test_settings
 
 
 @pytest_asyncio.fixture(name='es_client', scope='session')
 async def es_client():
-    es_client = AsyncElasticsearch(hosts=test_settings.es_host, verify_certs=False)
-    yield es_client
-    await es_client.close()
+    client = AsyncElasticsearch(hosts=test_settings.es_host, verify_certs=False)
+    yield client
+    await client.close()
 
 
 @pytest_asyncio.fixture(name='es_write_data')
@@ -20,9 +21,7 @@ def es_write_data(es_client: AsyncElasticsearch):
         if await es_client.indices.exists(index=test_settings.es_index):
             await es_client.indices.delete(index=test_settings.es_index)
         await es_client.indices.create(index=test_settings.es_index, **test_settings.es_index_mapping)
-
         updated, errors = await async_bulk(client=es_client, actions=data)
-
         if errors:
             raise Exception('Ошибка записи данных в Elasticsearch')
     return inner
@@ -47,7 +46,17 @@ def make_get_request(session_client):
                 status = response.status
             )
     return inner
-    
+
+
+@pytest_asyncio.fixture(name='redis_client', scope='session')
+async def redis_client():
+    client = Redis(
+        host=test_settings.redis_host, 
+        port=test_settings.redis_port, 
+        decode_responses=True)
+    yield client
+    await client.aclose()
+
 
 @pytest_asyncio.fixture(name='es_data')
 def es_data():

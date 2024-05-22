@@ -1,3 +1,4 @@
+import json
 import pytest
 
 
@@ -20,28 +21,58 @@ async def test_film_not_found(make_get_request):
     assert response['body'] == {"detail":"film not found"}
 
 
-@pytest.mark.parametrize(
-    'query_data, expected_answer',
-    [
-        ({'query': 'Star'}, {'status': 200, 'length': 20}),
-        ({'query': ''}, {'status': 404, 'length': 1}),
-        ({'query': 456}, {'status': 404, 'length': 1})
-    ]
-)
-@pytest.mark.asyncio(scope='session')
-async def test_film_search(make_get_request, query_data, expected_answer):
-    response = await make_get_request(f'films/search/', query_data)
-
-    assert expected_answer['status'] == response['status']
-    assert expected_answer['length'] == len(response['body'])
-
-
 @pytest.mark.asyncio(scope='session')
 async def test_film_search(make_get_request):
-    page = 1
-    size = 20
-    query = 'Star'
-    response = await make_get_request(f'films/search/?query={query}&page={page}&size={size}')
+    query_data = {"query": "Wars"}
+    response = await make_get_request(f'films/search/', query_data)
+    #print(response)
+    assert response['status'] == 200
+    assert len(response['body']) == 10
+
+
+@pytest.mark.asyncio(scope='session')
+async def test_film_search_n_size(make_get_request, redis_client):
+    cache_key = 'film:query:star'
+    await redis_client.delete(cache_key)
+
+    query_data = {"query": "Star", "page": 1, "size": 5}
+    response = await make_get_request(f'films/search/', query_data)
 
     assert response['status'] == 200
-    assert len(response['body']) == 20
+    assert len(response['body']) == 5
+
+
+@pytest.mark.asyncio(scope='session')
+async def test_film_search_n_size_cache(make_get_request, redis_client):
+    cache_key = 'film:query:star'
+    await redis_client.delete(cache_key)
+
+    query_data = {"query": "Star", "page": 1, "size": 2}
+    response = await make_get_request(f'films/search/', query_data)
+
+    cache = await redis_client.get(cache_key)
+    cache = json.loads(cache)
+
+    assert len(response['body']) == len(cache)
+    assert response['body'] == cache
+
+
+@pytest.mark.asyncio(scope='session')
+async def test_film_list(make_get_request):
+
+    query_data = {"sort_field": "imdb_rating", "sort_order":"desc", "page": 1, "size": 2}
+    response = await make_get_request(f'films', query_data)
+
+    assert response['status'] == 200
+    assert response['body'][0]['imdb_rating'] == 9.6
+
+
+@pytest.mark.asyncio(scope='session')
+async def test_film_list_by_genre(make_get_request):
+
+    query_data = {"genre_id":"ca88141b-a6b4-450d-bbc3-efa940e4953f", 
+                  "sort_field": "imdb_rating", "sort_order":"desc", "page": 1, "size": 10}
+    response = await make_get_request(f'films', query_data)
+
+    assert response['status'] == 200
+    assert response['body'][0]['imdb_rating'] == 8.6

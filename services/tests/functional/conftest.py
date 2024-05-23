@@ -1,6 +1,5 @@
 import aiohttp
 import pytest_asyncio
-import json
 
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
@@ -18,11 +17,11 @@ async def es_client():
 
 @pytest_asyncio.fixture(name='es_write_data')
 def es_write_data(es_client: AsyncElasticsearch):
-    async def inner(data: list[dict], index, index_mapping):
-        if await es_client.indices.exists(index=index):
-            await es_client.indices.delete(index=index)
-        await es_client.indices.create(index=index, **index_mapping)
-        print(type(data))
+    async def inner(data: list[dict]):
+        if await es_client.indices.exists(index=test_settings.es_index):
+            await es_client.indices.delete(index=test_settings.es_index)
+        await es_client.indices.create(index=test_settings.es_index, **test_settings.es_index_mapping)
+
         updated, errors = await async_bulk(client=es_client, actions=data)
 
         if errors:
@@ -42,7 +41,6 @@ def make_get_request(session_client):
     async def inner(endpoint: str, query_data: dict = None):
         url = test_settings.service_url + endpoint
         query_data = query_data
-        print(url)
         async with session_client.get(url, params=query_data) as response:
             return dict(
                 body = await response.json(),
@@ -62,24 +60,12 @@ async def redis_client():
     await client.aclose()
 
 
-@pytest_asyncio.fixture(name='json_data')
-def json_data():
-    def inner(file):
-        with open(file, 'r') as file:
-            data = file.read()
-            idx = json.loads(data)
-            settings = idx['settings']
-            mappings = idx['mappings']
-            return {'settings': settings, 'mappings': mappings}
-    return inner
-
-
 @pytest_asyncio.fixture(name='es_data')
 def es_data():
-    def inner(es_row_data, index):
+    def inner(es_row_data):
         bulk_query: list[dict] = []
         for row in es_row_data:
-            data = {'_index': index, '_id': row['uuid']}
+            data = {'_index': 'test_movies', '_id': row['uuid']}
             data.update({'_source': row})
             bulk_query.append(data)
         return bulk_query

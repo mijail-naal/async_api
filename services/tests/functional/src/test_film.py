@@ -1,12 +1,12 @@
 import pytest
-
+import http
 
 @pytest.mark.asyncio(scope='session')
 async def test_film_details(make_get_request):
     query_data = 'a1bf30bf-08ee-4000-8d9a-a1e17ab2c197'
     response = await make_get_request(f'films/{query_data}')
 
-    assert response['status'] == 200
+    assert response['status'] == http.HTTPStatus.OK
     assert len(response['body']) == 8
     assert response['body']['uuid'] == 'a1bf30bf-08ee-4000-8d9a-a1e17ab2c197'
 
@@ -16,7 +16,7 @@ async def test_film_not_found(make_get_request):
     query_data = 'a1bf30bf-08ee-4000-@-¿+-no-exists-id'
     response = await make_get_request(f'films/{query_data}')
 
-    assert response['status'] == 404
+    assert response['status'] == http.HTTPStatus.NOT_FOUND
     assert response['body'] == {"detail":"film not found"}
 
 
@@ -26,7 +26,7 @@ async def test_film_list(make_get_request):
     query_data = {"sort_field": "imdb_rating", "sort_order":"desc", "page": 1, "size": 2}
     response = await make_get_request(f'films', query_data)
 
-    assert response['status'] == 200
+    assert response['status'] == http.HTTPStatus.OK
     assert response['body'][0]['imdb_rating'] == 9.6
 
 

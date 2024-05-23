@@ -37,5 +37,5 @@ async def test_film_list_by_genre(make_get_request):
                   "sort_field": "imdb_rating", "sort_order":"desc", "page": 1, "size": 10}
     response = await make_get_request(f'films', query_data)
 
-    assert response['status'] == 200
+    assert response['status'] == http.HTTPStatus.OK
     assert response['body'][0]['imdb_rating'] == 8.6

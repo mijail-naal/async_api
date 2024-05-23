@@ -4,7 +4,8 @@
 
 Команда: [Михаил](https://github.com/mijail-naal) [Артём](https://github.com/Benrise) [Максим](https://github.com/4Surpr1se)
 
-Приглашение [TO DO]
+[Приглашение](https://github.com/mijail-naal/Async_API_sprint_2/invitations)
+
 
 ### Тестирование
 

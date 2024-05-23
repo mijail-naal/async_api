@@ -5,4 +5,5 @@ services:
     build: .
     entrypoint: ./entrypoint.sh
     depends_on:
-      - fastapi
+      loader:
+        condition: service_completed_successfully

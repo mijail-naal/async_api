@@ -50,17 +50,29 @@ async def redis_client():
 
 
 @pytest_asyncio.fixture
-def make_get_request(session):
+def make_get_request(session_client):
     '''
     Фикстура выполнения GET-запросов
     '''
     async def inner(endpoint: str, params: dict = None) -> dict:
         url = test_settings.service_url + endpoint
         params = params or {}
-        async with session.get(url, params=params) as response:
+        async with session_client.get(url, params=params) as response:
             return {
                 'body': await response.json(),
                 'headers': dict(response.headers),
                 'status': response.status,
             }
+    return inner
+
+
+@pytest_asyncio.fixture(name='es_data')
+def es_data():
+    def inner(es_row_data):
+        bulk_query: list[dict] = []
+        for row in es_row_data:
+            data = {'_index': 'index', '_id': row['uuid']}
+            data.update({'_source': row})
+            bulk_query.append(data)
+        return bulk_query
     return inner

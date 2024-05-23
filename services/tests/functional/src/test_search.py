@@ -1,12 +1,13 @@
 import pytest
 import json
+import http
 
 
 @pytest.mark.asyncio(scope='session')
 async def test_film_search(make_get_request):
     query_data = {"query": "Wars"}
     response = await make_get_request(f'films/search/', query_data)
-    assert response['status'] == 200
+    assert response['status'] == http.HTTPStatus.OK
     assert len(response['body']) == 10
 
 
@@ -18,7 +19,7 @@ async def test_film_search_n_size(make_get_request, redis_client):
     query_data = {"query": "Star", "page": 1, "size": 5}
     response = await make_get_request(f'films/search/', query_data)
 
-    assert response['status'] == 200
+    assert response['status'] == http.HTTPStatus.OK
     assert len(response['body']) == 5
 
 

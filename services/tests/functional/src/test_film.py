@@ -1,3 +1,4 @@
+import http
 import json
 import pytest
 
@@ -7,7 +8,7 @@ async def test_film_details(make_get_request):
     query_data = 'a1bf30bf-08ee-4000-8d9a-a1e17ab2c197'
     response = await make_get_request(f'films/{query_data}')
 
-    assert response['status'] == 200
+    assert response['status'] == http.HTTPStatus.OK
     assert len(response['body']) == 8
     assert response['body']['uuid'] == 'a1bf30bf-08ee-4000-8d9a-a1e17ab2c197'
 
@@ -17,7 +18,7 @@ async def test_film_not_found(make_get_request):
     query_data = 'a1bf30bf-08ee-4000-@-¿+-no-exists-id'
     response = await make_get_request(f'films/{query_data}')
 
-    assert response['status'] == 404
+    assert response['status'] == http.HTTPStatus.NOT_FOUND
     assert response['body'] == {"detail":"film not found"}
 
 
@@ -25,8 +26,8 @@ async def test_film_not_found(make_get_request):
 async def test_film_search(make_get_request):
     query_data = {"query": "Wars"}
     response = await make_get_request(f'films/search/', query_data)
-    #print(response)
-    assert response['status'] == 200
+
+    assert response['status'] == http.HTTPStatus.OK
     assert len(response['body']) == 10
 
 
@@ -38,7 +39,7 @@ async def test_film_search_n_size(make_get_request, redis_client):
     query_data = {"query": "Star", "page": 1, "size": 5}
     response = await make_get_request(f'films/search/', query_data)
 
-    assert response['status'] == 200
+    assert response['status'] == http.HTTPStatus.OK
     assert len(response['body']) == 5
 
 
@@ -63,7 +64,7 @@ async def test_film_list(make_get_request):
     query_data = {"sort_field": "imdb_rating", "sort_order":"desc", "page": 1, "size": 2}
     response = await make_get_request(f'films', query_data)
 
-    assert response['status'] == 200
+    assert response['status'] == http.HTTPStatus.OK
     assert response['body'][0]['imdb_rating'] == 9.6
 
 
@@ -74,5 +75,5 @@ async def test_film_list_by_genre(make_get_request):
                   "sort_field": "imdb_rating", "sort_order":"desc", "page": 1, "size": 10}
     response = await make_get_request(f'films', query_data)
 
-    assert response['status'] == 200
+    assert response['status'] == http.HTTPStatus.OK
     assert response['body'][0]['imdb_rating'] == 8.6

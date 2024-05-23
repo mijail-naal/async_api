@@ -64,27 +64,3 @@ def make_get_request(session):
                 'status': response.status,
             }
     return inner
-
-
-@pytest_asyncio.fixture(name='es_data')
-def es_data():
-    def inner(es_row_data):
-        bulk_query: list[dict] = []
-        for row in es_row_data:
-            data = {'_index': 'test_movies', '_id': row['uuid']}
-            data.update({'_source': row})
-            bulk_query.append(data)
-        return bulk_query
-    return inner
-
-
-@pytest_asyncio.fixture(name='es_write_data')
-def es_write_data(es_client: AsyncElasticsearch):
-    async def inner(data: list[dict]):
-        if await es_client.indices.exists(index=test_settings.es_index):
-            await es_client.indices.delete(index=test_settings.es_index)
-        await es_client.indices.create(index=test_settings.es_index, **test_settings.es_index_mapping)
-        updated, errors = await async_bulk(client=es_client, actions=data)
-        if errors:
-            raise Exception('Ошибка записи данных в Elasticsearch')
-    return inner

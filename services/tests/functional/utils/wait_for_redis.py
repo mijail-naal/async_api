@@ -4,7 +4,7 @@ import backoff
 from redis import Redis
 
 from helpers import logger
-from tests.functional.settings import test_settings
+from settings import test_settings
 
 timeout = time.time() + 60 * 5
 

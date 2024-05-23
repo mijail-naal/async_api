@@ -1,9 +1,15 @@
 FROM python:3.10
 
-WORKDIR /tests
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH /tests/functional
 
-COPY ./tests/functional/requirements.txt .
-RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir -r requirements.txt
+COPY entrypoint.sh .
+COPY requirements.txt .
 
-COPY ./tests .
+RUN pip3 install --upgrade pip && pip3 install --no-cache-dir -r requirements.txt
+
+COPY . /tests/functional
+WORKDIR /tests/functional
+
+RUN chmod a+x entrypoint.sh

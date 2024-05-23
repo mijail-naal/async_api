@@ -28,12 +28,11 @@ async def person_details(person_id: str, person_service: PersonService = Depends
 
 @router.get('/search/',
             response_model=list[PersonFilms],
-            defautlt='Lucas',
             summary='Получить список людей',
             description='Формат массива данных ответа: uuid, full_name, films')
 async def persons_list(
         query: str = Query(
-            default=None,
+            default='Lucas',
             alias=config.QUERY_ALIAS,
             description=config.QUERY_DESC
         ),

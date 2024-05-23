@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  elasticsearch:
+    container_name: "elasticsearch"
+    image: elasticsearch:8.12.1
+    volumes:
+      - "../../es/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml"
+    ports:
+      - ${ELASTIC_PORTS}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cat/health?h=status | grep -q green"]
+      retries: 300
+      interval: 2s
+
+  redis:
+    container_name: "redis"
+    image: redis:7.2.4
+    restart: always
+    ports:
+      - ${REDIS_PORTS}
+
+  loader:
+    container_name: 'loader'
+    image: loader
+    build: ../../etl_loader
+    depends_on: 
+      elasticsearch:
+        condition: service_healthy
+    env_file: .env

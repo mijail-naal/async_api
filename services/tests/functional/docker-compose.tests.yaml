@@ -1,0 +1,9 @@
+version: '3.9'
+
+services:
+  tests:
+    build: .
+    entrypoint: ./entrypoint.sh
+    depends_on:
+      loader:
+        condition: service_completed_successfully

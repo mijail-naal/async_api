@@ -1,7 +1,6 @@
-import http
 import json
 import pytest
-
+import http
 
 @pytest.mark.asyncio(scope='session')
 async def test_person_details(make_get_request):
@@ -29,7 +28,7 @@ async def test_person_search(make_get_request, redis_client):
 
     query_data = {"query": "Lucas"}
     response = await make_get_request(f'persons/search/', query_data)
-
+    
     assert response['status'] == http.HTTPStatus.OK
     assert len(response['body']) == 4
 

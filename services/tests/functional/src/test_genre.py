@@ -1,6 +1,6 @@
-import http
 import json
 import pytest
+import http
 
 
 @pytest.mark.asyncio(scope='session')
@@ -19,7 +19,7 @@ async def test_genre_not_found(make_get_request):
     query_data = 'a1bf30bf-08ee-4000-@-¿+-no-exists-id'
     response = await make_get_request(f'genre/{query_data}')
 
-    assert response['status'] ==  http.HTTPStatus.NOT_FOUND
+    assert response['status'] == http.HTTPStatus.NOT_FOUND
     assert response['body'] == {"detail":"Not Found"}
 
 

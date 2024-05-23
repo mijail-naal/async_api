@@ -1,41 +1,33 @@
-import sys
+import time
 import backoff
 
-from elasticsearch import Elasticsearch
-from logger import logger
+from elasticsearch import (
+    Elasticsearch,
+    ConnectionError,
+    NotFoundError,
+    RequestError
+)
 
-sys.path.append("..")
-
+from helpers import logger
 from settings import test_settings
 
 
-def backoff_handler(details: dict) -> None:
-    """Backoff event handler logging function"""
-    logger.warning(
-        "Backing off {wait:0.1f} seconds after {tries} tries "
-        "calling function {target.__name__} with args {args}"
-        .format(**details)
-    )
+timeout = time.time() + 60 * 5
+hosts = [f'{test_settings.elastic_protocol}://{test_settings.elastic_host}:{test_settings.elastic_port}']
 
 
-@backoff.on_exception(backoff.expo,
-                      ConnectionError,
-                      on_backoff=backoff_handler)
-def es_connection(client: Elasticsearch):
-    if not client.ping():
-        logger.info("Trying to connect ...")
+@backoff.on_exception(
+    backoff.expo,
+    (ConnectionError, NotFoundError, RequestError),
+    max_time=60
+)
+def connect_to_es(es: Elasticsearch) -> None:
+    if not es.ping():
         raise ConnectionError("Failed to connect")
-    
-    logger.info("connected.")
+
+    logger.info('Successfully connected to Elasticsearch')
 
 
 if __name__ == '__main__':
-    es_client = Elasticsearch(
-        hosts=test_settings.es_host, 
-        verify_certs=False,
-        max_retries=0,
-        # retry_on_status=0,
-        # retry_on_timeout=False,
-    )
-    
-    es_connection(es_client)
+    es_client = Elasticsearch(hosts=hosts, verify_certs=False)
+    connect_to_es(es_client)

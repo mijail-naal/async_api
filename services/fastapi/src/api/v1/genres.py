@@ -5,7 +5,6 @@ from http import HTTPStatus
 from fastapi import APIRouter, Depends, HTTPException
 
 from services.genre import GenreService, get_genre_service
-#from .schema import Genre
 from models.genre import Genre
 
 

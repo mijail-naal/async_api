@@ -4,7 +4,6 @@ import pytest_asyncio
 from redis.asyncio import Redis
 
 from elasticsearch import AsyncElasticsearch
-from elasticsearch.helpers import async_bulk
 
 from settings import test_settings
 

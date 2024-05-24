@@ -9,20 +9,20 @@ from elasticsearch import AsyncElasticsearch, NotFoundError, BadRequestError
 from fastapi import Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 
-from redis.asyncio import Redis
-
 from db.elastic import get_elastic
-from db.redis import get_redis
+from db.redis import get_cache
 
 from models.film import FilmModel, FilmRating
+
+from utils.abstract import AsyncCacheStorage
 
 
 FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
 
 class FilmService:
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
-        self.redis = redis
+    def __init__(self, cache: AsyncCacheStorage, elastic: AsyncElasticsearch):
+        self.cache = cache
         self.elastic = elastic
 
     async def get_by_id(self, film_id: str) -> FilmModel | None:
@@ -42,14 +42,14 @@ class FilmService:
         return FilmModel(**doc['_source'])
 
     async def _film_from_cache(self, film_id: str) -> FilmModel | None:
-        data = await self.redis.get(film_id)
+        data = await self.cache.get(film_id)
         if not data:
             return None
         film = FilmModel.model_validate_json(data)
         return film
 
     async def _put_film_to_cache(self, film: FilmModel):
-        await self.redis.set(film.uuid, film.model_dump_json(), FILM_CACHE_EXPIRE_IN_SECONDS)
+        await self.cache.set(film.uuid, film.model_dump_json(), FILM_CACHE_EXPIRE_IN_SECONDS)
 
     async def get_by_query(self, query: str, page: int, size: int) -> FilmRating | None:
         word = query.lower()
@@ -114,7 +114,7 @@ class FilmService:
         return films
 
     async def _films_from_cache(self, cache_key: str) -> list[FilmRating] | None:
-        films = await self.redis.get(cache_key)
+        films = await self.cache.get(cache_key)
         if not films:
             return None
         return [FilmRating(uuid=film['uuid'],
@@ -122,7 +122,7 @@ class FilmService:
                            imdb_rating=film['imdb_rating']) for film in orjson.loads(films)]
 
     async def _put_films_to_cache(self, films: list[FilmRating], cache_key: str):
-        await self.redis.set(
+        await self.cache.set(
             cache_key,
             orjson.dumps(jsonable_encoder(films)),
             FILM_CACHE_EXPIRE_IN_SECONDS
@@ -131,7 +131,7 @@ class FilmService:
 
 @lru_cache()
 def get_film_service(
-        redis: Redis = Depends(get_redis),
+        cache: AsyncCacheStorage = Depends(get_cache),
         elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> FilmService:
-    return FilmService(redis, elastic)
+    return FilmService(cache, elastic)

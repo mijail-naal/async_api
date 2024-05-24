@@ -7,22 +7,22 @@ from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 
-from redis.asyncio import Redis
-
 from db.elastic import get_elastic
-from db.redis import get_redis
+from db.redis import get_cache
 
 from models.person import PersonFilms
 from models.film import FilmRating
 
 from utils.es import build_body
+from utils.abstract import AsyncCacheStorage
+
 
 PERSON_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
 
 class PersonService:
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
-        self.redis = redis
+    def __init__(self, cache: AsyncCacheStorage, elastic: AsyncElasticsearch):
+        self.cache = cache
         self.elastic = elastic
 
     async def get_by_id(self, person_id: str) -> PersonFilms | None:
@@ -42,7 +42,7 @@ class PersonService:
         return PersonFilms(**doc['_source'])
 
     async def _person_from_cache(self, person_id: str) -> PersonFilms | None:
-        data = await self.redis.get(person_id)
+        data = await self.cache.get(person_id)
         if not data:
             return None
 
@@ -50,7 +50,7 @@ class PersonService:
         return person
 
     async def _put_person_to_cache(self, person: PersonFilms):
-        await self.redis.set(person.uuid, person.model_dump_json(), PERSON_CACHE_EXPIRE_IN_SECONDS)
+        await self.cache.set(person.uuid, person.model_dump_json(), PERSON_CACHE_EXPIRE_IN_SECONDS)
 
     async def get_persons(self, query: str, page: int, size: int) -> list[PersonFilms]:
         page -= 1
@@ -75,13 +75,13 @@ class PersonService:
         return persons
 
     async def _persons_from_cache(self, cache_key: str) -> list[PersonFilms] | None:
-        persons: list[PersonFilms] = await self.redis.get(cache_key)
+        persons: list[PersonFilms] = await self.cache.get(cache_key)
         if not persons:
             return None
         return orjson.loads(persons)
 
     async def _put_persons_to_cache(self, persons: list[PersonFilms], cache_key: str):
-        await self.redis.set(
+        await self.cache.set(
             cache_key,
             orjson.dumps(jsonable_encoder(persons)),
             PERSON_CACHE_EXPIRE_IN_SECONDS
@@ -116,7 +116,7 @@ class PersonService:
 
 @lru_cache()
 def get_person_service(
-        redis: Redis = Depends(get_redis),
+        cache: AsyncCacheStorage = Depends(get_cache),
         elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> PersonService:
-    return PersonService(redis, elastic)
+    return PersonService(cache, elastic)

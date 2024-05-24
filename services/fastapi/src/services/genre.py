@@ -7,22 +7,21 @@ from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 
-from redis.asyncio import Redis
-
 from db.elastic import get_elastic
-from db.redis import get_redis
+from db.redis import get_cache
 
 from models.genre import GenreModel
 
 from utils.es import build_body
+from utils.abstract import AsyncCacheStorage
 
 
 GENRE_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
 
 class GenreService:
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
-        self.redis = redis
+    def __init__(self, cache: AsyncCacheStorage, elastic: AsyncElasticsearch):
+        self.cache = cache
         self.elastic = elastic
 
     async def get_by_id(self, genre_id: str) -> GenreModel | None:
@@ -42,7 +41,7 @@ class GenreService:
         return GenreModel(**doc['_source'])
 
     async def _genre_from_cache(self, genre_id: str) -> GenreModel | None:
-        data = await self.redis.get(genre_id)
+        data = await self.cache.get(genre_id)
         if not data:
             return None
 
@@ -50,7 +49,7 @@ class GenreService:
         return Genre
 
     async def _put_genre_to_cache(self, Genre: GenreModel):
-        await self.redis.set(Genre.uuid, Genre.model_dump_json(), GENRE_CACHE_EXPIRE_IN_SECONDS)
+        await self.cache.set(Genre.uuid, Genre.model_dump_json(), GENRE_CACHE_EXPIRE_IN_SECONDS)
 
     async def get_genres(self, size: int) -> list[GenreModel]:
         cache_key = 'genre:all'
@@ -73,13 +72,13 @@ class GenreService:
         return genres
 
     async def _genres_from_cache(self, cache_key: str) -> list[GenreModel] | None:
-        genres: list[GenreModel] = await self.redis.get(cache_key)
+        genres: list[GenreModel] = await self.cache.get(cache_key)
         if not genres:
             return None
         return orjson.loads(genres)
 
     async def _put_genres_to_cache(self, genres: list[GenreModel], cache_key: str):
-        await self.redis.set(
+        await self.cache.set(
             cache_key,
             orjson.dumps(jsonable_encoder(genres)),
             GENRE_CACHE_EXPIRE_IN_SECONDS
@@ -88,7 +87,7 @@ class GenreService:
 
 @lru_cache()
 def get_genre_service(
-        redis: Redis = Depends(get_redis),
+        cache: AsyncCacheStorage = Depends(get_cache),
         elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> GenreService:
-    return GenreService(redis, elastic)
+    return GenreService(cache, elastic)

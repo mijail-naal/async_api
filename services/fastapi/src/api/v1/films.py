@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from services.film import FilmService, get_film_service
 from utils.enums import Sort
 from models.film import Film, FilmRating
+from models.abstract import PaginatedParams
 
 
 router = APIRouter()
@@ -51,21 +52,13 @@ async def films_list(
             alias=config.QUERY_ALIAS,
             description=config.QUERY_DESC,
         ),
-        page: int = Query(
-            default=1,
-            ge=1,
-            alias=config.PAGE_ALIAS,
-            description=config.PAGE_DESC
-        ),
-        size: int = Query(
-            default=10,
-            ge=1,
-            le=config.MAX_PAGE_SIZE,
-            alias=config.SIZE_ALIAS,
-            description=config.SIZE_DESC
-        ),
+        pagination: PaginatedParams = Depends(),
         film_service: FilmService = Depends(get_film_service)) -> list[FilmRating]:
-    searchs = await film_service.get_by_query(query,page,size)
+    searchs = await film_service.get_by_query(
+        query,
+        pagination.page,
+        pagination.size
+    )
     if not searchs:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='films not found')
     return [FilmRating(uuid=search.uuid, 
@@ -93,27 +86,21 @@ async def films_rating(
             alias=config.SORT_ORDER_ALIAS,
             description=config.SORT_ORDER_DESC
         ),
-        page: int = Query(
-            default=1,
-            ge=1,
-            alias=config.PAGE_ALIAS,
-            description=config.PAGE_DESC
-        ),
-        size: int = Query(
-            default=10,
-            ge=1,
-            le=config.MAX_PAGE_SIZE,
-            alias=config.SIZE_ALIAS,
-            description=config.SIZE_DESC
-        ),
+        pagination: PaginatedParams = Depends(),
         film_service: FilmService = Depends(get_film_service)) -> list[FilmRating]:
-    films = await film_service.get_films(genre, sort_field, sort_order, page, size)
+    films = await film_service.get_films(
+        genre,
+        sort_field,
+        sort_order,
+        pagination.page,
+        pagination.size
+    )
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='films not found')
     if genre:
-        return [FilmRating(uuid=genre, 
-                           title=film.title, 
+        return [FilmRating(uuid=genre,
+                           title=film.title,
                            imdb_rating=film.imdb_rating) for film in films]
-    return [FilmRating(uuid=film.uuid, 
-                       title=film.title, 
+    return [FilmRating(uuid=film.uuid,
+                       title=film.title,
                        imdb_rating=film.imdb_rating) for film in films]

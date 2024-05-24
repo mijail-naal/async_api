@@ -3,7 +3,7 @@ import backoff
 
 from redis import Redis
 
-from helpers import logger
+from logger import logger
 from settings import test_settings
 
 timeout = time.time() + 60 * 5

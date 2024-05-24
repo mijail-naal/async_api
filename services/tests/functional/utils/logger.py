@@ -8,10 +8,10 @@ if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('connection_process')
+logger = logging.getLogger('tests')
 
 fh = RotatingFileHandler(
-    os.path.join(logs_dir, 'connection_logs.log'),
+    os.path.join(logs_dir, 'tests.log'),
     maxBytes=20_000_000,
     backupCount=5
 )

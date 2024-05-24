@@ -8,7 +8,6 @@ from testdata.film_data import (
     LIST_BY_GENRE
 )
 
-
 @pytest.mark.asyncio(scope='session')
 async def test_film_details(make_get_request):
     response = await make_get_request(f'films/{CHECK_ID}')
@@ -29,7 +28,7 @@ async def test_film_not_found(make_get_request):
 @pytest.mark.asyncio(scope='session')
 async def test_film_list(make_get_request):
     response = await make_get_request(f'films', SORT_BY_RATING)
-
+    
     assert response['status'] == http.HTTPStatus.OK
     assert response['body'][0]['imdb_rating'] == 9.6
 
@@ -37,6 +36,6 @@ async def test_film_list(make_get_request):
 @pytest.mark.asyncio(scope='session')
 async def test_film_list_by_genre(make_get_request):
     response = await make_get_request(f'films', LIST_BY_GENRE)
-
+    
     assert response['status'] == http.HTTPStatus.OK
     assert response['body'][0]['imdb_rating'] == 8.6

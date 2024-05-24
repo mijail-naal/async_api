@@ -8,7 +8,7 @@ from elasticsearch import (
     RequestError
 )
 
-from helpers import logger
+from logger import logger
 from settings import test_settings
 
 

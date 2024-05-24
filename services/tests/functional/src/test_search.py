@@ -2,22 +2,25 @@ import pytest
 import json
 import http
 
+from testdata.search_data import (
+    FILM_SEARCH_BY_WORD,
+    FILM_CACHE,
+    SEARCH_PAGE_SIZE
+)
+
 
 @pytest.mark.asyncio(scope='session')
 async def test_film_search(make_get_request):
-    query_data = {"query": "Wars"}
-    response = await make_get_request(f'films/search/', query_data)
+    response = await make_get_request(f'films/search/', FILM_SEARCH_BY_WORD)
+
     assert response['status'] == http.HTTPStatus.OK
     assert len(response['body']) == 10
 
 
 @pytest.mark.asyncio(scope='session')
 async def test_film_search_n_size(make_get_request, redis_client):
-    cache_key = 'film:query:star'
-    await redis_client.delete(cache_key)
-
-    query_data = {"query": "Star", "page": 1, "size": 5}
-    response = await make_get_request(f'films/search/', query_data)
+    await redis_client.delete(FILM_CACHE)
+    response = await make_get_request(f'films/search/', SEARCH_PAGE_SIZE[0])
 
     assert response['status'] == http.HTTPStatus.OK
     assert len(response['body']) == 5
@@ -25,13 +28,10 @@ async def test_film_search_n_size(make_get_request, redis_client):
 
 @pytest.mark.asyncio(scope='session')
 async def test_film_search_n_size_cache(make_get_request, redis_client):
-    cache_key = 'film:query:star'
-    await redis_client.delete(cache_key)
+    await redis_client.delete(FILM_CACHE)
+    response = await make_get_request(f'films/search/', SEARCH_PAGE_SIZE[1])
 
-    query_data = {"query": "Star", "page": 1, "size": 2}
-    response = await make_get_request(f'films/search/', query_data)
-
-    cache = await redis_client.get(cache_key)
+    cache = await redis_client.get(FILM_CACHE)
     cache = json.loads(cache)
 
     assert len(response['body']) == len(cache)

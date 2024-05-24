@@ -1,43 +1,38 @@
 import orjson
-
 from functools import lru_cache
 
-from elasticsearch import AsyncElasticsearch, NotFoundError
-
+from elasticsearch import NotFoundError
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 
-from db.elastic import get_elastic
+from db.elastic import get_search_service
 from db.redis import get_cache
 
 from models.person import PersonFilms
 from models.film import FilmRating
-
 from utils.es import build_body
-from utils.abstract import AsyncCacheStorage
-
+from utils.abstract import AsyncCacheStorage, AsyncSearchService
 
 PERSON_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
 
 class PersonService:
-    def __init__(self, cache: AsyncCacheStorage, elastic: AsyncElasticsearch):
+    def __init__(self, cache: AsyncCacheStorage, search_service: AsyncSearchService):
         self.cache = cache
-        self.elastic = elastic
+        self.search_service = search_service
 
     async def get_by_id(self, person_id: str) -> PersonFilms | None:
         person = await self._person_from_cache(person_id)
         if not person:
-            person = await self._get_person_from_elastic(person_id)
+            person = await self._get_person_from_search_service(person_id)
             if not person:
                 return None
             await self._put_person_to_cache(person)
         return person
 
-    async def _get_person_from_elastic(self, person_id: str) -> PersonFilms | None:
-        try:
-            doc = await self.elastic.get(index='persons', id=person_id)
-        except NotFoundError:
+    async def _get_person_from_search_service(self, person_id: str) -> PersonFilms | None:
+        doc = await self.search_service.get(index='persons', id=person_id)
+        if doc is None:
             return None
         return PersonFilms(**doc['_source'])
 
@@ -45,7 +40,6 @@ class PersonService:
         data = await self.cache.get(person_id)
         if not data:
             return None
-
         person = PersonFilms.model_validate_json(data)
         return person
 
@@ -60,17 +54,14 @@ class PersonService:
         persons = await self._persons_from_cache(cache_key)
         if persons:
             return persons
-        persons = await self._get_persons_from_elastic(es_body)
+        persons = await self._get_persons_from_search_service(es_body)
         if not persons:
             return []
         await self._put_persons_to_cache(persons, cache_key)
         return persons
 
-    async def _get_persons_from_elastic(self, body) -> list[PersonFilms] | None:
-        try:
-            response = await self.elastic.search(index='persons', body=body)
-        except NotFoundError:
-            return None
+    async def _get_persons_from_search_service(self, body) -> list[PersonFilms] | None:
+        response = await self.search_service.search(index='persons', body=body)
         persons = [PersonFilms(**doc['_source']) for doc in response['hits']['hits']]
         return persons
 
@@ -95,28 +86,28 @@ class PersonService:
 
     async def _get_films_by_person(self, person_id) -> FilmRating | None:
         sorting = {"imdb_rating": {"order": "desc"}}
-        try:
-            doc = await self.elastic.search(index='persons',
-                                            body={"query": {"match": {"uuid": {"query": person_id}}}},
-                                            _source_includes=['films.uuid',])
-
-            film_ids = [i['_source']['films'] for i in doc['hits']['hits']][0]
-            ids = [id['uuid'] for id in film_ids]
-
-            doc_movies = await self.elastic.search(index='movies',
-                                                   body={
-                                                       "query": {"ids": {"values": ids}},
-                                                       "sort": sorting, "from": 0, "size": 100
-                                                   },
-                                                   _source_includes=['uuid', 'title', 'imdb_rating'])
-            ratings = [FilmRating(**i['_source']) for i in doc_movies['hits']['hits']]
-        except NotFoundError:
-            return None
+        doc = await self.search_service.search(
+            index='persons',
+            body={"query": {"match": {"uuid": {"query": person_id}}}},
+            _source_includes=['films.uuid']
+        )
+        film_ids = [i['_source']['films'] for i in doc['hits']['hits']][0]
+        ids = [id['uuid'] for id in film_ids]
+        doc_movies = await self.search_service.search(
+            index='movies',
+            body={
+                "query": {"ids": {"values": ids}},
+                "sort": sorting, "from": 0, "size": 100
+            },
+            _source_includes=['uuid', 'title', 'imdb_rating']
+        )
+        ratings = [FilmRating(**i['_source']) for i in doc_movies['hits']['hits']]
         return ratings
+
 
 @lru_cache()
 def get_person_service(
         cache: AsyncCacheStorage = Depends(get_cache),
-        elastic: AsyncElasticsearch = Depends(get_elastic),
+        search_service: AsyncSearchService = Depends(get_search_service),
 ) -> PersonService:
-    return PersonService(cache, elastic)
+    return PersonService(cache, search_service)

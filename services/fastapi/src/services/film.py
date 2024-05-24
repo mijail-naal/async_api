@@ -4,40 +4,39 @@ from http import HTTPStatus
 
 import orjson
 
-from elasticsearch import AsyncElasticsearch, NotFoundError, BadRequestError
+from elasticsearch import NotFoundError, BadRequestError
 
 from fastapi import Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 
-from db.elastic import get_elastic
+from db.elastic import get_search_service
 from db.redis import get_cache
 
 from models.film import FilmModel, FilmRating
 
-from utils.abstract import AsyncCacheStorage
+from utils.abstract import AsyncCacheStorage, AsyncSearchService
 
 
 FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
 
 class FilmService:
-    def __init__(self, cache: AsyncCacheStorage, elastic: AsyncElasticsearch):
+    def __init__(self, cache: AsyncCacheStorage, search_service: AsyncSearchService):
         self.cache = cache
-        self.elastic = elastic
+        self.search_service = search_service
 
     async def get_by_id(self, film_id: str) -> FilmModel | None:
         film = await self._film_from_cache(film_id)
         if not film:
-            film = await self._get_film_from_elastic(film_id)
+            film = await self._get_film_from_search_service(film_id)
             if not film:
                 return None
             await self._put_film_to_cache(film)
         return film
 
-    async def _get_film_from_elastic(self, film_id: str) -> FilmModel | None:
-        try:
-            doc = await self.elastic.get(index='movies', id=film_id)
-        except NotFoundError:
+    async def _get_film_from_search_service(self, film_id: str) -> FilmModel | None:
+        doc = await self.search_service.get(index='movies', id=film_id)
+        if doc is None:
             return None
         return FilmModel(**doc['_source'])
 
@@ -61,16 +60,15 @@ class FilmService:
                 return None
             await self._put_films_to_cache(films, cache_key)
         return films
-    
+
     async def _get_films_by_query(self, query: str, page: int, size: int) -> FilmRating | None:
         page -= 1
         body = {"from": page, "size": size, "query": {"match": {"title": {"query": query}}}}
-        try:
-            doc = await self.elastic.search(index='movies',
-                                            body=body,
-                                            _source_includes=['uuid', 'title', 'imdb_rating'])
-        except NotFoundError:
-            return None
+        doc = await self.search_service.search(
+                index='movies',
+                body=body,
+                _source_includes=['uuid', 'title', 'imdb_rating']
+            )
         return [FilmRating(**i['_source']) for i in doc['hits']['hits']]
 
     async def get_films(
@@ -81,14 +79,18 @@ class FilmService:
             cache_key = f'film:rating:genre:{genre}'
         films = await self._films_from_cache(cache_key)
         if not films:
-            films = await self._get_films_from_elastic(genre, sort_field,
-                                                       sort_order, page, size)
+            films = await self._get_films_from_search_service(
+                genre, sort_field,
+                sort_order,
+                page,
+                size
+            )
             if not films:
                 return None
             await self._put_films_to_cache(films, cache_key)
         return films
 
-    async def _get_films_from_elastic(
+    async def _get_films_from_search_service(
             self, genre: str, sort_field: str, sort_order: str,  page: int, size: int
         ) -> list[FilmRating] | None:
         sort = sort_order.value
@@ -97,20 +99,17 @@ class FilmService:
         if genre:
             body["query"] = {
                 "nested": {
-                    "path": "genres","query": {
+                    "path": "genres", "query": {
                         "bool": {"must": [{"match": {"genres.uuid": genre}},]}
                     },
                 }
             }
-        try:
-            response = await self.elastic.search(index='movies',
-                                                 body=body,
-                                                 _source_includes=['uuid', 'title', 'imdb_rating'])
-            films = [FilmRating(**doc['_source']) for doc in response['hits']['hits']]
-        except NotFoundError:
-            return None
-        except BadRequestError:
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='no matching sort field')
+        response = await self.search_service.search(
+            index='movies',
+            body=body,
+            _source_includes=['uuid', 'title', 'imdb_rating']
+        )
+        films = [FilmRating(**doc['_source']) for doc in response['hits']['hits']]
         return films
 
     async def _films_from_cache(self, cache_key: str) -> list[FilmRating] | None:
@@ -132,6 +131,6 @@ class FilmService:
 @lru_cache()
 def get_film_service(
         cache: AsyncCacheStorage = Depends(get_cache),
-        elastic: AsyncElasticsearch = Depends(get_elastic),
+        search_service: AsyncSearchService = Depends(get_search_service),
 ) -> FilmService:
-    return FilmService(cache, elastic)
+    return FilmService(cache, search_service)

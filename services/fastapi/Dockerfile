@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.12-slim
 
 RUN mkdir /app
 
@@ -6,8 +6,8 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN pip3.11 install -r requirements.txt
+RUN pip install -r requirements.txt
 
 COPY . .
 
-RUN chmod a+x src/docker/*.sh
+RUN chmod a+x src/*.sh

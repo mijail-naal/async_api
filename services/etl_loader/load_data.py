@@ -10,7 +10,7 @@ from utils.logger import logger
 from process.elasticloader import ElasticLoader
 from dotenv import load_dotenv
 
-load_dotenv('./env/dev/.env', override=False)
+load_dotenv('./env/prod/.env', override=False)
 
 ELASTIC_PROTOCOL = os.getenv('ELASTIC_PROTOCOL', 'http')
 ELASTIC_HOST = os.getenv('ELASTIC_HOST', '127.0.0.1')

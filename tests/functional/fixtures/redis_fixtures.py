@@ -8,8 +8,8 @@ from settings import test_settings
 @pytest_asyncio.fixture(name='redis_client', scope='session')
 async def redis_client():
     '''
-    Фикстура для установки соединения с Redis.
-    При этом каждый раз будет происходить сброс кэша.
+    A fixture for establishing a connection with Redis.
+    In this case, the cache will be reset each time..
     '''
     client = Redis(
         host=test_settings.redis_host,

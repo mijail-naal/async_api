@@ -51,7 +51,7 @@ def genre_loader(file: json, index: str) -> None:
 
 
 def main(indices: List[tuple]) -> None:
-    """The main method of loading data to Elasticsearch."""
+    """Function to load all the data to Elasticsearch."""
 
     movies_index = indices[0][0]
     persons_index = indices[1][0]

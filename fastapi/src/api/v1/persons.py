@@ -12,15 +12,11 @@ from models.abstract import PaginatedParams
 router = APIRouter()
 
 
-@router.get('/{person_id}',
-            response_model=PersonFilms,
-            summary='Получить информацию о жанре людях по его uuid',
-            description='''
-                Формат данных ответа:
-                        uuid,
-                        full_name,
-                        films
-                    ''')
+@router.get(
+        '/{person_id}',
+        response_model=PersonFilms,
+        summary='Receive information about persons-genre by uuid',
+        description='Response format: uuid, full_name, films')
 async def person_details(person_id: str, person_service: PersonService = Depends(get_person_service)) -> PersonFilms:
     person = await person_service.get_by_id(person_id)
     if not person:
@@ -28,23 +24,17 @@ async def person_details(person_id: str, person_service: PersonService = Depends
     return PersonFilms(uuid=person.uuid, full_name=person.full_name, films=person.films)
 
 
-@router.get('/search/',
-            response_model=list[PersonFilms],
-            summary='Получить список людей',
-            description='Формат массива данных ответа: uuid, full_name, films')
+@router.get(
+        '/search/',
+        response_model=list[PersonFilms],
+        summary='Get persons list',
+        description='Response format: uuid, full_name, films')
 async def persons_list(
-        query: str = Query(
-            default='Lucas',
-            alias=config.QUERY_ALIAS,
-            description=config.QUERY_DESC
-        ),
+        query: str = Query(default='Lucas', alias=config.QUERY_ALIAS, description=config.QUERY_DESC),
         pagination: PaginatedParams = Depends(),
-        person_service: PersonService = Depends(get_person_service)) -> list[PersonFilms]:
-    persons = await person_service.get_persons(
-        query,
-        pagination.page,
-        pagination.size,
-    )
+        person_service: PersonService = Depends(get_person_service)
+    ) -> list[PersonFilms]:
+    persons = await person_service.get_persons(query, pagination.page, pagination.size)
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='persons not found')
     return persons
@@ -55,5 +45,4 @@ async def person_by_films(person_id: str, person_service: PersonService = Depend
     person_films = await person_service.get_person_film_rating(person_id)
     if not person_films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
-
     return [FilmRating(uuid=person_id, title=p_film.title, imdb_rating=p_film.imdb_rating) for p_film in person_films]

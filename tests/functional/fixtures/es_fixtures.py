@@ -7,9 +7,7 @@ from settings import test_settings
 
 @pytest_asyncio.fixture(name='es_client', scope='session')
 async def es_client():
-    '''
-    Фикстура для установки соединения с ES.
-    '''
+    '''A fixture for establishing a connection with Elasticsearch.'''
     client = AsyncElasticsearch(
         hosts=test_settings.elastic_url,
         verify_certs=False

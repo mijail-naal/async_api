@@ -28,22 +28,22 @@ settings = Settings()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-QUERY_DESC = "Поисковая строка"
+QUERY_DESC = "Search bar"
 QUERY_ALIAS = "query"
 
-SORT_ORDER_DESC = "Сортировка. asc - по возрастанию, desc - по убыванию"
+SORT_ORDER_DESC = "Ordering. asc - ascending, desc - descending"
 SORT_ORDER_ALIAS = "sort_order"
 
-SORT_FIELD_DESC = "Поле для сортировки"
+SORT_FIELD_DESC = "Sorting field"
 SORT_FIELD_ALIAS = "sort_field"
 
-PAGE_DESC = "Номер страницы"
+PAGE_DESC = "Page number"
 PAGE_ALIAS = "page"
 
-SIZE_DESC = "Количество элементов на странице"
+SIZE_DESC = "Total elements for each page"
 SIZE_ALIAS = "size"
 
-GENRE_DESC = "Фильтр по жанру фильма"
+GENRE_DESC = "Filter by film genre"
 GENRE_ALIAS = "genre_id"
 
 MAX_PAGE_SIZE = 100

@@ -1,13 +1,19 @@
-version: "3.9"
+# version: "3.9"
 
 services:
   elasticsearch:
     container_name: "elasticsearch"
-    image: elasticsearch:8.12.1
-    volumes:
-      - "../../es/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml"
+    image: elasticsearch:${ELASTICSEARCH_VERSION}
     ports:
-      - ${ELASTIC_PORTS}
+      - ${ELASTICSEARCH_PORTS}
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms200m -Xmx200m"
+    volumes:
+      - data01:/usr/share/elasticsearch/data
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200/_cat/health?h=status | grep -q green"]
       retries: 300
@@ -15,10 +21,12 @@ services:
 
   redis:
     container_name: "redis"
-    image: redis:7.2.4
+    image: redis:${REDIS_VERSION}
     restart: always
     ports:
       - ${REDIS_PORTS}
+    volumes:
+      - redis_data:/data
 
   loader:
     container_name: 'loader'
@@ -28,3 +36,8 @@ services:
       elasticsearch:
         condition: service_healthy
     env_file: .env
+
+
+volumes:
+  data01:
+  redis_data:

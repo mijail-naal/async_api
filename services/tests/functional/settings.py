@@ -7,11 +7,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class TestSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file='.env',
-        env_file_encoding='utf-8'
+        env_file_encoding='utf-8',
+        extra='ignore'
     )
     project_name: str = ...
-    redis_host: str = Field(9200, alias='REDIS_HOST')
+    redis_host: str = Field('127.0.0.1', alias='REDIS_HOST')
     redis_port: int = Field(6379, alias='REDIS_PORT')
+    elastic_url: str = ...
     elastic_protocol: str = ...
     elastic_host: str = Field('127.0.0.1', alias='ELASTIC_HOST')
     elastic_port: int = Field(9200, alias='ELASTIC_PORT')

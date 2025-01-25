@@ -11,7 +11,7 @@ async def es_client():
     Фикстура для установки соединения с ES.
     '''
     client = AsyncElasticsearch(
-        hosts=test_settings.elastic_host,
+        hosts=test_settings.elastic_url,
         verify_certs=False
     )
     yield client

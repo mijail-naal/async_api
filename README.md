@@ -105,19 +105,19 @@ async_api
     ├── etl_loader
     │   ├── docs
     │   ├── env/prod
-	|   │   └── .env.example
+    |   │   └── .env.example
     │   ├── indices
     │   ├── process
-	|   │   └── elasticloader.py
+    |   │   └── elasticloader.py
     │   ├── utils
-	|   │   └── logger.py
+    |   │   └── logger.py
     │   ├── Dockerfile
     │   ├── load_data.py
     |   └── requirements.txt
-	|
+    |
     ├── fastapi
     │   ├── env/prod
-	|   │   └── .env.example
+    |   │   └── .env.example
     │   ├── src
     │   │   ├── api/v1
     │   │   │   ├── __init__.py
@@ -148,8 +148,8 @@ async_api
     │   │   └── main.py
     │   ├── Dockerfile
     |   └── requirements.txt
-	|
-	├── nginx
+    |
+    ├── nginx
     |   ├── configs
     │   │   └── site.conf
     │   ├── Dockerfile
@@ -157,7 +157,7 @@ async_api
     |
     ├── tests
     |   ├── __init__.py
-	│   └── functional
+    │   └── functional
     |       ├── fixtures
     |       |   ├── es_fixtures.py
     |       |   ├── redis_fixtures.py

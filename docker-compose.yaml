@@ -1,7 +1,6 @@
 # version: ${COMPOSE_VERSION}
 
 services:
-
   nginx:
     container_name: "nginx"
     restart: always
@@ -13,6 +12,7 @@ services:
       - fastapi
     ports:
       - ${NGINX_PORTS}
+
   redis:
     container_name: "redis"
     image: redis:${REDIS_VERSION}

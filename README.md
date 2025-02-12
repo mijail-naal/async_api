@@ -2,12 +2,12 @@
 
 ### Project description
 
-An asynchronous API for the online movie service implemented whit FastAPI.
-This service is the entry point for all customers and displays information for home, movies, actors and genres pages, and search functionalities. In the first stage, the service allow only anonymous users. Authorization and authentication functions are not implemented yet.
+An asynchronous API for the online movie service implemented with FastAPI.
+This service is the entry point for all customers and displays information for home, movies, actors and genres pages, and search functionalities. On the first stage, the service allows only anonymous users. Authorization and authentication functions are not implemented yet.
 
 
 Technologies used:   
-- The application code is written in Python + FastAPI. 
+- The application code is written in Python and FastAPI. 
 - The application runs under the control of the ASGI server (uvicorn). 
 - ElasticSearch is used as storage. 
 - Redis is used to cache the data. 
@@ -24,7 +24,7 @@ Main entities:
 
 ### Two ways to launch the project:
 
-- *Launch the API with the DB services by running the `docker-compose.yml` from root directory*
+- *Launch the API with the DB services by running the `docker-compose.yml` from the root directory*
 
 - *Launch the functional tests from the directory `async_api/tests/functional/`* 
 
